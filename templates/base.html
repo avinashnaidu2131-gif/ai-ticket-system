@@ -316,6 +316,7 @@
   <a href="/dashboard" class="navbar-brand">◈ Support<span>AI</span></a>
   <div class="navbar-links">
     <a href="/dashboard" {% if request.path=='/dashboard' %}class="active"{% endif %}>Dashboard</a>
+    <a href="/pricing"   {% if request.path=='/pricing'   %}class="active"{% endif %}>Pricing</a>
     <a href="/submit"    {% if request.path=='/submit'    %}class="active"{% endif %}>New Ticket</a>
     {% if current_user.role in ['admin','agent'] %}
     <a href="/analytics" {% if request.path=='/analytics' %}class="active"{% endif %}>Analytics</a>

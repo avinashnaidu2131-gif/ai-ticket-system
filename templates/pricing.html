@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block title %}Pricing · SupportAI{% endblock %}
+
+{% block head %}
+<style>
+  .pricing-wrap {
+    max-width: 1100px; margin: 0 auto; padding: 3rem 2rem;
+    position: relative; z-index: 10;
+  }
+  .pricing-eyebrow {
+    font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--accent2); text-align: center; margin-bottom: 0.75rem;
+  }
+  .pricing-title {
+    font-family: var(--font-head); font-size: 2.8rem; font-weight: 800;
+    letter-spacing: -0.04em; text-align: center; margin-bottom: 0.5rem;
+    line-height: 1.1;
+  }
+  .pricing-title span { color: var(--accent); }
+  .pricing-sub {
+    text-align: center; color: var(--muted); font-size: 0.9rem;
+    margin-bottom: 3.5rem;
+  }
+
+  .plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .plan-card {
+    background: rgba(17,17,24,0.85);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(16px);
+    transition: border-color .25s, transform .25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .plan-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+  .plan-card.popular {
+    border-color: var(--accent);
+    box-shadow: 0 0 40px rgba(232,255,71,0.12);
+  }
+  .plan-card.popular::before {
+    content: 'MOST POPULAR';
+    position: absolute; top: 1rem; right: 1rem;
+    font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em;
+    background: var(--accent); color: #0a0a0f;
+    padding: 3px 8px; border-radius: 4px;
+  }
+
+  /* Free card */
+  .plan-card.free-card { border-color: rgba(107,107,128,0.3); }
+
+  .plan-name {
+    font-family: var(--font-head); font-size: 1rem; font-weight: 700;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 1rem;
+  }
+  .plan-price {
+    display: flex; align-items: baseline; gap: 0.25rem;
+    margin-bottom: 0.35rem;
+  }
+  .plan-amount {
+    font-family: var(--font-head); font-size: 3rem; font-weight: 800;
+    letter-spacing: -0.04em; color: var(--text); line-height: 1;
+  }
+  .plan-currency { font-size: 1.2rem; color: var(--muted); margin-bottom: 0.5rem; }
+  .plan-period   { font-size: 0.8rem; color: var(--muted); }
+  .plan-desc     { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.75rem; line-height: 1.5; }
+
+  .plan-features { list-style: none; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .plan-features li {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.82rem; color: var(--text);
+  }
+  .feat-check { color: var(--success); font-size: 0.9rem; flex-shrink: 0; }
+  .feat-cross { color: var(--muted);   font-size: 0.9rem; flex-shrink: 0; }
+  .feat-disabled { color: var(--muted); }
+
+  .plan-btn {
+    width: 100%; padding: 0.75rem; border-radius: 9px; border: none;
+    font-family: var(--font-mono); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all .2s; letter-spacing: 0.02em;
+  }
+  .plan-btn.primary { background: var(--accent); color: #0a0a0f; }
+  .plan-btn.primary:hover { background: #d4eb2a; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(232,255,71,.3); }
+  .plan-btn.outline { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .plan-btn.outline:hover { color: var(--text); border-color: var(--text); }
+  .plan-btn.current { background: var(--surface2); color: var(--success); border: 1px solid var(--success); cursor: default; }
+
+  .divider-line { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+  /* FAQ */
+  .faq-section { margin-top: 5rem; max-width: 680px; margin-left: auto; margin-right: auto; }
+  .faq-title { font-family: var(--font-head); font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 2rem; }
+  .faq-item { border-bottom: 1px solid var(--border); padding: 1.25rem 0; cursor: pointer; }
+  .faq-q { font-size: 0.88rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+  .faq-a { font-size: 0.82rem; color: var(--muted); margin-top: 0.75rem; display: none; line-height: 1.6; }
+  .faq-item.open .faq-a { display: block; animation: fadeUp .2s ease; }
+  .faq-arrow { transition: transform .2s; }
+  .faq-item.open .faq-arrow { transform: rotate(180deg); }
+
+  /* Guarantee badge */
+  .guarantee {
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    margin: 2.5rem 0; font-size: 0.82rem; color: var(--muted);
+  }
+  .guarantee-icon { font-size: 1.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pricing-wrap">
+
+  <p class="pricing-eyebrow anim">// Pricing Plans</p>
+  <h1 class="pricing-title anim anim-d1">Simple, transparent<br><span>pricing</span></h1>
+  <p class="pricing-sub anim anim-d2">Start free. Upgrade when you need more power.</p>
+
+  <div class="plans-grid anim anim-d3">
+
+    <!-- Free -->
+    <div class="plan-card free-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">
+        <span class="plan-currency">$</span>
+        <span class="plan-amount">0</span>
+        <span class="plan-period">/month</span>
+      </div>
+      <p class="plan-desc">Perfect for individuals and small teams getting started.</p>
+      <ul class="plan-features">
+        <li><span class="feat-check">✓</span> 1 Admin account</li>
+        <li><span class="feat-check">✓</span> 10 tickets / month</li>
+        <li><span class="feat-check">✓</span> AI classification</li>
+        <li><span class="feat-check">✓</span> Basic dashboard</li>
+        <li><span class="feat-cross">✗</span> <span class="feat-disabled">Agent accounts</span></li>
+        <li><span class="feat-cross">✗</span> <span class="feat-disabled">Analytics</span></li>
+        <li><span class="feat-cross">✗</span> <span class="feat-disabled">Live chat</span></li>
+      </ul>
+      {% if current_plan == 'free' %}
+      <button class="plan-btn current">✓ Current Plan</button>
+      {% else %}
+      <a href="/register" class="plan-btn outline" style="display:block;text-align:center;text-decoration:none;">Get Started Free</a>
+      {% endif %}
+    </div>
+
+    <!-- Starter -->
+    <div class="plan-card">
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">
+        <span class="plan-currency">$</span>
+        <span class="plan-amount">9</span>
+        <span class="plan-period">/month</span>
+      </div>
+      <p class="plan-desc">For growing teams that need more agents and tickets.</p>
+      <ul class="plan-features">
+        <li><span class="feat-check">✓</span> 5 Agent accounts</li>
+        <li><span class="feat-check">✓</span> 100 tickets / month</li>
+        <li><span class="feat-check">✓</span> AI classification</li>
+        <li><span class="feat-check">✓</span> Full dashboard</li>
+        <li><span class="feat-check">✓</span> Analytics</li>
+        <li><span class="feat-check">✓</span> Live chat</li>
+        <li><span class="feat-cross">✗</span> <span class="feat-disabled">Priority support</span></li>
+      </ul>
+      {% if current_plan == 'starter' %}
+      <button class="plan-btn current">✓ Current Plan</button>
+      {% else %}
+      <form method="POST" action="/subscribe/starter">
+        <button type="submit" class="plan-btn outline">Upgrade to Starter →</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Pro (Popular) -->
+    <div class="plan-card popular">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">
+        <span class="plan-currency">$</span>
+        <span class="plan-amount">29</span>
+        <span class="plan-period">/month</span>
+      </div>
+      <p class="plan-desc">For serious businesses that need full power and scale.</p>
+      <ul class="plan-features">
+        <li><span class="feat-check">✓</span> 20 Agent accounts</li>
+        <li><span class="feat-check">✓</span> 1,000 tickets / month</li>
+        <li><span class="feat-check">✓</span> Claude AI classification</li>
+        <li><span class="feat-check">✓</span> Full dashboard</li>
+        <li><span class="feat-check">✓</span> Advanced analytics</li>
+        <li><span class="feat-check">✓</span> Live chat</li>
+        <li><span class="feat-check">✓</span> Priority support</li>
+      </ul>
+      {% if current_plan == 'pro' %}
+      <button class="plan-btn current">✓ Current Plan</button>
+      {% else %}
+      <form method="POST" action="/subscribe/pro">
+        <button type="submit" class="plan-btn primary">Upgrade to Pro →</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <!-- Enterprise -->
+    <div class="plan-card">
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price">
+        <span class="plan-currency">$</span>
+        <span class="plan-amount">99</span>
+        <span class="plan-period">/month</span>
+      </div>
+      <p class="plan-desc">Unlimited everything for large organizations.</p>
+      <ul class="plan-features">
+        <li><span class="feat-check">✓</span> Unlimited agents</li>
+        <li><span class="feat-check">✓</span> Unlimited tickets</li>
+        <li><span class="feat-check">✓</span> Claude AI + custom model</li>
+        <li><span class="feat-check">✓</span> Full dashboard</li>
+        <li><span class="feat-check">✓</span> Advanced analytics</li>
+        <li><span class="feat-check">✓</span> Live chat</li>
+        <li><span class="feat-check">✓</span> 24/7 dedicated support</li>
+      </ul>
+      {% if current_plan == 'enterprise' %}
+      <button class="plan-btn current">✓ Current Plan</button>
+      {% else %}
+      <form method="POST" action="/subscribe/enterprise">
+        <button type="submit" class="plan-btn outline">Upgrade to Enterprise →</button>
+      </form>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Guarantee -->
+  <div class="guarantee anim">
+    <span class="guarantee-icon">🔒</span>
+    <span>Secure payments via Stripe · Cancel anytime · 14-day money back guarantee</span>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section anim">
+    <div class="faq-title">Frequently Asked Questions</div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Can I cancel anytime? <span class="faq-arrow">▾</span></div>
+      <div class="faq-a">Yes! You can cancel your subscription at any time. You'll keep access until the end of your billing period.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Is my payment secure? <span class="faq-arrow">▾</span></div>
+      <div class="faq-a">Absolutely. All payments are processed by Stripe — the same payment infrastructure used by Amazon, Google, and Shopify.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Can I upgrade or downgrade? <span class="faq-arrow">▾</span></div>
+      <div class="faq-a">Yes, you can change your plan at any time. Upgrades take effect immediately. Downgrades take effect at the next billing cycle.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-q">Do you offer discounts for nonprofits or students? <span class="faq-arrow">▾</span></div>
+      <div class="faq-a">Yes! Contact us and we'll set you up with a special discount code.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggleFaq(el) {
+  el.classList.toggle('open');
+}
+</script>
+{% endblock %}
