@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · SupportAI{% endblock %}
+
+{% block head %}
+<style>
+  /* ── Header ── */
+  .dash-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .dash-title {
+    font-family: var(--font-head);
+    font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em;
+  }
+  .dash-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.2rem; }
+
+  /* ── Stat row ── */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem; margin-bottom: 1.75rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    transition: border-color .2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-val {
+    font-family: var(--font-head);
+    font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .3rem; }
+
+  /* ── Filters ── */
+  .filter-bar {
+    display: flex; gap: 0.5rem; flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .filter-bar select {
+    width: auto; padding: 0.4rem 0.75rem; font-size: 0.78rem; cursor: pointer;
+  }
+  .filter-bar .btn { font-size: 0.78rem; padding: 0.4rem 0.8rem; }
+
+  /* ── Table ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); background: var(--surface2); }
+  th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.7rem; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    cursor: pointer;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 0.85rem 1rem; font-size: 0.83rem; vertical-align: middle; }
+  .td-title { font-weight: 500; max-width: 260px; }
+  .td-title small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+  .td-tags { color: var(--muted); font-size: 0.72rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .td-conf { font-size: 0.78rem; color: var(--muted); }
+  .conf-bar {
+    height: 3px; border-radius: 2px;
+    background: var(--border); margin-top: 4px; width: 80px;
+  }
+  .conf-fill { height: 100%; border-radius: 2px; background: var(--accent2); }
+
+  .empty-state {
+    text-align: center; padding: 4rem 2rem; color: var(--muted);
+  }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: .4; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    width: 100%; max-width: 560px;
+    max-height: 90vh; overflow-y: auto;
+    animation: fadeUp .25s ease;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+  }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+  .modal-title {
+    font-family: var(--font-head); font-size: 1.1rem; font-weight: 700;
+    margin-bottom: 1.25rem; padding-right: 2rem;
+  }
+  .detail-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: flex-start; }
+  .detail-key { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; min-width: 90px; padding-top: 2px; }
+  .detail-val { font-size: 0.83rem; }
+  .ai-box {
+    background: rgba(232,255,71,.04);
+    border: 1px solid rgba(232,255,71,.12);
+    border-radius: 8px; padding: 0.85rem 1rem;
+    font-size: 0.8rem; color: var(--muted);
+    margin: 1rem 0;
+  }
+  .ai-box strong { color: var(--accent); }
+  .section-sep { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+  .audit-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .audit-item {
+    display: flex; gap: 0.75rem; align-items: flex-start;
+    font-size: 0.78rem; color: var(--muted);
+  }
+  .audit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); margin-top: 5px; flex-shrink: 0; }
+
+  /* ── Invite panel ── */
+  .invite-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.5rem;
+    display: none;
+  }
+  .invite-panel.open { display: block; animation: fadeUp .25s ease; }
+  .invite-title {
+    font-family: var(--font-head); font-weight: 700; margin-bottom: 1rem;
+  }
+  .invite-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
+
+  @media (max-width: 700px) {
+    .invite-grid { grid-template-columns: 1fr; }
+    td:nth-child(4), th:nth-child(4),
+    td:nth-child(5), th:nth-child(5) { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <!-- Header -->
+  <div class="dash-header anim">
+    <div>
+      <div class="dash-title">Ticket Dashboard</div>
+      <div class="dash-sub">{{ tickets|length }} ticket{{ 's' if tickets|length != 1 }} · {{ current_user.company.name }}</div>
+    </div>
+    <div class="flex gap-1">
+      {% if current_user.role == 'admin' %}
+      <button onclick="toggleInvite()" class="btn btn-ghost btn-sm">+ Invite Agent</button>
+      {% endif %}
+      <a href="/submit" class="btn btn-primary btn-sm">+ New Ticket</a>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-grid anim anim-d1">
+    {% set open_count     = tickets | selectattr('status','equalto','Open')        | list | length %}
+    {% set progress_count = tickets | selectattr('status','equalto','In Progress') | list | length %}
+    {% set resolved_count = tickets | selectattr('status','equalto','Resolved')    | list | length %}
+    {% set high_count     = tickets | selectattr('priority','in',['High','Critical']) | list | length %}
+    <div class="stat-card">
+      <div class="stat-val">{{ tickets|length }}</div>
+      <div class="stat-label">Total Tickets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--accent)">{{ open_count }}</div>
+      <div class="stat-label">Open</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--accent2)">{{ progress_count }}</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--success)">{{ resolved_count }}</div>
+      <div class="stat-label">Resolved</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--warn)">{{ high_count }}</div>
+      <div class="stat-label">High/Critical</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="filter-bar anim anim-d2">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      <option value="Open"        {% if request.args.get('status')=='Open'        %}selected{% endif %}>Open</option>
+      <option value="In Progress" {% if request.args.get('status')=='In Progress' %}selected{% endif %}>In Progress</option>
+      <option value="Resolved"    {% if request.args.get('status')=='Resolved'    %}selected{% endif %}>Resolved</option>
+      <option value="Closed"      {% if request.args.get('status')=='Closed'      %}selected{% endif %}>Closed</option>
+    </select>
+    <select name="priority" onchange="this.form.submit()">
+      <option value="">All Priorities</option>
+      <option value="Critical" {% if request.args.get('priority')=='Critical' %}selected{% endif %}>Critical</option>
+      <option value="High"     {% if request.args.get('priority')=='High'     %}selected{% endif %}>High</option>
+      <option value="Medium"   {% if request.args.get('priority')=='Medium'   %}selected{% endif %}>Medium</option>
+      <option value="Low"      {% if request.args.get('priority')=='Low'      %}selected{% endif %}>Low</option>
+    </select>
+    <select name="category" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      <option value="Billing"        {% if request.args.get('category')=='Billing'        %}selected{% endif %}>Billing</option>
+      <option value="Authentication" {% if request.args.get('category')=='Authentication' %}selected{% endif %}>Authentication</option>
+      <option value="Technical"      {% if request.args.get('category')=='Technical'      %}selected{% endif %}>Technical</option>
+      <option value="Feature Request"{% if request.args.get('category')=='Feature Request'%}selected{% endif %}>Feature Request</option>
+      <option value="General"        {% if request.args.get('category')=='General'        %}selected{% endif %}>General</option>
+    </select>
+    {% if request.args %}
+    <a href="/dashboard" class="btn btn-ghost">✕ Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Table -->
+  <div class="table-wrap anim anim-d3">
+    {% if tickets %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Ticket</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>AI Confidence</th>
+          <th>Assigned</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tickets %}
+        <tr onclick="openModal({{ t.id }})">
+          <td class="text-muted text-sm">#{{ t.id }}</td>
+          <td class="td-title">
+            {{ t.title }}
+            <small>{{ t.tags }}</small>
+          </td>
+          <td><span class="text-sm">{{ t.category or '—' }}</span></td>
+          <td>
+            <span class="badge p-{{ (t.priority or 'medium').lower() }}">
+              {{ t.priority or 'Medium' }}
+            </span>
+          </td>
+          <td>
+            <span class="badge s-{{ (t.status or 'open').lower().replace(' ','-') }}">
+              {{ t.status }}
+            </span>
+          </td>
+          <td class="td-conf">
+            {{ "%.0f"|format((t.confidence or 0)*100) }}%
+            <div class="conf-bar"><div class="conf-fill" style="width:{{ "%.0f"|format((t.confidence or 0)*100) }}%"></div></div>
+          </td>
+          <td class="text-sm text-muted">
+            {% if t.assigned_to %}
+              {{ agents | selectattr('id','equalto',t.assigned_to) | map(attribute='username') | first | default('—') }}
+            {% else %}—{% endif %}
+          </td>
+          <td onclick="event.stopPropagation()">
+            <div class="flex gap-1">
+              {% if current_user.role in ['admin','agent'] %}
+              <button class="btn btn-ghost btn-sm" onclick="openActions({{ t.id }}, '{{ t.status }}', '{{ t.reply or '' }}')">Manage</button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🎫</div>
+      <p>No tickets found.</p>
+      <a href="/submit" class="btn btn-primary mt-2">Submit First Ticket</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Invite Agent Panel -->
+  {% if current_user.role == 'admin' %}
+  <div class="invite-panel" id="invitePanel">
+    <div class="invite-title">Invite Agent</div>
+    <form method="POST" action="/invite_agent">
+      <div class="invite-grid">
+        <div class="form-group" style="margin:0">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="agent_name" required />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-end">Create Agent</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Ticket Detail Modal ── -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    <div class="modal-title" id="modalTitle">Loading...</div>
+    <div id="modalBody"><p class="text-muted text-sm">Fetching details...</p></div>
+  </div>
+</div>
+
+<!-- ── Manage Actions Modal ── -->
+<div class="modal-overlay" id="actionModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('actionModal')">✕</button>
+    <div class="modal-title">Manage Ticket</div>
+
+    <!-- Status -->
+    <form method="POST" id="statusForm">
+      <div class="form-group">
+        <label>Update Status</label>
+        <select name="status" id="statusSelect">
+          <option value="Open">Open</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+          <option value="Closed">Closed</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+    </form>
+
+    <hr class="section-sep" />
+
+    <!-- Reply -->
+    <form method="POST" id="replyForm">
+      <div class="form-group">
+        <label>Send Reply</label>
+        <textarea name="reply" id="replyTextarea" rows="3" placeholder="Write a reply to the customer..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Send Reply</button>
+    </form>
+
+    {% if current_user.role == 'admin' %}
+    <hr class="section-sep" />
+
+    <!-- Assign -->
+    <form method="POST" id="assignForm">
+      <div class="form-group">
+        <label>Assign to Agent</label>
+        <select name="agent_id">
+          <option value="">— Unassigned —</option>
+          {% for agent in agents %}
+          <option value="{{ agent.id }}">{{ agent.username }} ({{ agent.role }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-ghost btn-sm">Assign</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+async function openModal(id) {
+  document.getElementById('modalTitle').textContent = 'Ticket #' + id;
+  document.getElementById('modalBody').innerHTML = '<p class="text-muted text-sm">Loading...</p>';
+  document.getElementById('detailModal').classList.add('open');
+
+  const res  = await fetch('/api/ticket/' + id);
+  const data = await res.json();
+
+  const priorityClass = { Critical:'p-critical', High:'p-high', Medium:'p-medium', Low:'p-low' };
+  const statusClass   = { Open:'s-open', 'In Progress':'s-in-progress', Resolved:'s-resolved', Closed:'s-closed' };
+  const pClass = priorityClass[data.priority] || 'p-low';
+  const sClass = statusClass[data.status]   || 's-open';
+
+  const logs = (data.audit_logs || []).map(l =>
+    `<div class="audit-item"><div class="audit-dot"></div><span><strong>${l.by}</strong> · ${l.action}${l.detail ? ' — ' + l.detail : ''} <span style="opacity:.5">${new Date(l.at).toLocaleString()}</span></span></div>`
+  ).join('') || '<p class="text-muted text-sm">No activity yet.</p>';
+
+  document.getElementById('modalTitle').textContent = data.title;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-row"><span class="detail-key">Category</span><span class="detail-val">${data.category || '—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Priority</span><span class="badge ${pClass}">${data.priority}</span></div>
+    <div class="detail-row"><span class="detail-key">Status</span><span class="badge ${sClass}">${data.status}</span></div>
+    <div class="detail-row"><span class="detail-key">Submitted</span><span class="detail-val text-muted">${new Date(data.created_at).toLocaleString()}</span></div>
+    <hr class="section-sep" />
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem">Description</p>
+    <p style="font-size:.85rem">${data.description}</p>
+    <div class="ai-box">
+      <strong>AI:</strong> ${data.explanation || '—'} &nbsp;·&nbsp; Tags: ${data.tags || '—'}
+    </div>
+    ${data.reply ? `<p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Agent Reply</p><p style="font-size:.85rem">${data.reply}</p><hr class="section-sep" />` : ''}
+    <p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">Audit Log</p>
+    <div class="audit-list">${logs}</div>
+  `;
+}
+
+function openActions(id, status, reply) {
+  document.getElementById('statusForm').action  = '/update_status/' + id;
+  document.getElementById('replyForm').action   = '/reply/' + id;
+  const assignForm = document.getElementById('assignForm');
+  if (assignForm) assignForm.action = '/assign/' + id;
+
+  document.getElementById('statusSelect').value    = status;
+  document.getElementById('replyTextarea').value   = reply;
+  document.getElementById('actionModal').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function toggleInvite() {
+  document.getElementById('invitePanel').classList.toggle('open');
+}
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+</script>
+{% endblock %}

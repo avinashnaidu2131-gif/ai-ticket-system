@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}New Ticket · SupportAI{% endblock %}
+
+{% block head %}
+<style>
+  .submit-wrap {
+    max-width: 680px;
+    margin: 3rem auto;
+  }
+  .page-eyebrow {
+    font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--accent2); margin-bottom: 0.5rem;
+  }
+  .page-title {
+    font-family: var(--font-head);
+    font-size: 1.8rem; font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.4rem;
+  }
+  .page-sub { color: var(--muted); font-size: 0.84rem; margin-bottom: 2rem; }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(232,255,71,.03); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .upload-label { font-size: 0.82rem; color: var(--muted); }
+  .upload-label strong { color: var(--accent); }
+
+  .ai-hint {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    background: rgba(232,255,71,.04);
+    border: 1px solid rgba(232,255,71,.15);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .ai-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    margin-top: 5px; flex-shrink: 0;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:.4; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page submit-wrap anim">
+  <p class="page-eyebrow">// New Ticket</p>
+  <h1 class="page-title">Submit a Support Request</h1>
+  <p class="page-sub">Describe your issue — AI will auto-classify category, priority, and tags.</p>
+
+  <div class="ai-hint">
+    <div class="ai-dot"></div>
+    <span>AI classifier is active. Your ticket will be automatically routed to the right team based on description content.</span>
+  </div>
+
+  <div class="card anim anim-d1">
+    <form method="POST" enctype="multipart/form-data">
+
+      <div class="form-group">
+        <label>Issue Title</label>
+        <input type="text" name="title" placeholder="Brief summary of the issue" required />
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" rows="6"
+          placeholder="Describe the issue in detail — e.g. steps to reproduce, error messages, what you expected vs what happened..."
+          required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Screenshot (optional)</label>
+        <div class="upload-zone" id="dropZone">
+          <input type="file" name="screenshot" accept="image/*" id="fileInput" onchange="updateLabel(this)" />
+          <div class="upload-icon">📎</div>
+          <div class="upload-label" id="uploadLabel">
+            <strong>Click to upload</strong> or drag & drop<br>PNG, JPG, GIF up to 5MB
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary">Submit Ticket →</button>
+        <a href="/dashboard" class="btn btn-ghost">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+function updateLabel(input) {
+  const label = document.getElementById('uploadLabel');
+  if (input.files && input.files[0]) {
+    label.innerHTML = `<strong>${input.files[0].name}</strong> selected`;
+  }
+}
+// Drag-and-drop highlight
+const zone = document.getElementById('dropZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+zone.addEventListener('drop', () => { zone.style.borderColor = ''; });
+</script>
+{% endblock %}

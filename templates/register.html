@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Register · SupportAI{% endblock %}
+
+{% block head %}
+<style>
+  body { overflow-x: hidden; }
+  .auth-wrap {
+    position: relative; z-index: 10;
+    min-height: 100vh; display: grid; place-items: center; padding: 2rem 1rem;
+  }
+  .auth-box {
+    width: 100%; max-width: 460px; padding: 2.5rem;
+    background: rgba(10,10,15,0.85);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px; backdrop-filter: blur(20px);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 32px 80px rgba(0,0,0,0.8);
+    animation: fadeUp .5s ease;
+  }
+  .auth-logo { font-family: var(--font-head); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; color: var(--accent); margin-bottom: 0.25rem; }
+  .auth-logo span { color: var(--text); }
+  .auth-sub  { color: var(--muted); font-size: 0.82rem; margin-bottom: 1.75rem; }
+  .role-toggle {
+    display: grid; grid-template-columns: 1fr 1fr;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 9px; padding: 4px; margin-bottom: 1.75rem; gap: 4px;
+  }
+  .role-btn { padding: 0.55rem; border: none; border-radius: 6px; font-family: var(--font-mono); font-size: 0.8rem; cursor: pointer; transition: all .2s; background: transparent; color: var(--muted); }
+  .role-btn.active { background: var(--accent); color: #0a0a0f; font-weight: 600; }
+  .role-btn:not(.active):hover { color: var(--text); background: rgba(255,255,255,0.06); }
+  .reg-panel { display: none; }
+  .reg-panel.active { display: block; animation: fadeUp .3s ease; }
+  .step-label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent2); margin-bottom: 1rem; }
+  .divider { border: none; border-top: 1px solid rgba(255,255,255,0.05); margin: 1.25rem 0; }
+  .info-banner { display: flex; align-items: center; gap: 0.6rem; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: var(--muted); }
+  .info-banner.citizen { background: rgba(71,255,232,.05); border: 1px solid rgba(71,255,232,.12); }
+  .info-banner.company { background: rgba(232,255,71,.04); border: 1px solid rgba(232,255,71,.10); }
+  .info-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .info-dot.cyan   { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+  .info-dot.yellow { background: var(--accent);  box-shadow: 0 0 8px var(--accent); }
+  .auth-footer { margin-top: 1.25rem; text-align: center; font-size: 0.8rem; color: var(--muted); }
+  .auth-footer a { color: var(--accent); text-decoration: none; }
+  input { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
+  input:focus { border-color: rgba(232,255,71,0.5) !important; background: rgba(255,255,255,0.06) !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">◈ Support<span>AI</span></div>
+    <p class="auth-sub">Create your account to get started</p>
+
+    <div class="role-toggle">
+      <button class="role-btn active" onclick="switchTab('citizen',this)" type="button">👤 Citizen / User</button>
+      <button class="role-btn" onclick="switchTab('company',this)" type="button">🏢 Company Admin</button>
+    </div>
+
+    <div class="reg-panel active" id="panel-citizen">
+      <div class="info-banner citizen"><div class="info-dot cyan"></div><span>Submit and track support tickets as an individual user.</span></div>
+      <form method="POST" action="/register/citizen">
+        <div class="form-group"><label>Full Name</label><input type="text" name="fullname" placeholder="Your full name" required /></div>
+        <div class="form-group"><label>Username</label><input type="text" name="username" placeholder="choose_a_username" required /></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="you@example.com" required /></div>
+        <div class="form-group"><label>Password</label><input type="password" name="password" placeholder="Strong password" required /></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem;">Create Citizen Account →</button>
+      </form>
+    </div>
+
+    <div class="reg-panel" id="panel-company">
+      <div class="info-banner company"><div class="info-dot yellow"></div><span>Create a company workspace and manage your team's support tickets.</span></div>
+      <form method="POST" action="/register/company">
+        <p class="step-label">// Company</p>
+        <div class="form-group"><label>Company Name</label><input type="text" name="company" placeholder="Acme Corp" required /></div>
+        <hr class="divider" />
+        <p class="step-label">// Admin Account</p>
+        <div class="form-group"><label>Username</label><input type="text" name="username" placeholder="admin_username" required /></div>
+        <div class="form-group"><label>Email</label><input type="email" name="email" placeholder="admin@company.com" /></div>
+        <div class="form-group"><label>Password</label><input type="password" name="password" placeholder="Strong password" required /></div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:.75rem;">Create Workspace →</button>
+      </form>
+    </div>
+
+    <p class="auth-footer">Already have an account? <a href="/login">Sign in</a></p>
+  </div>
+</div>
+
+<script>
+function switchTab(tab, btn) {
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.reg-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+</script>
+{% endblock %}

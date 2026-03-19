@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Analytics · SupportAI{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .analytics-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 1.75rem;
+  }
+  .page-title {
+    font-family: var(--font-head);
+    font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em;
+  }
+  .page-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.2rem; }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem; margin-bottom: 1.75rem;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    transition: border-color .2s;
+  }
+  .kpi-card:hover { border-color: var(--accent); }
+  .kpi-val {
+    font-family: var(--font-head);
+    font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+  }
+  .kpi-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .35rem; }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .chart-title {
+    font-family: var(--font-head);
+    font-size: 0.95rem; font-weight: 700;
+    margin-bottom: 1.25rem;
+  }
+  .chart-sub { font-size: 0.72rem; color: var(--muted); letter-spacing: .04em; }
+  canvas { max-height: 220px; }
+
+  .loading-pulse {
+    height: 220px; display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 0.82rem;
+  }
+
+  @media (max-width: 700px) { .chart-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="analytics-header anim">
+    <div>
+      <div class="page-title">Analytics</div>
+      <div class="page-sub">Live metrics for {{ current_user.company.name }}</div>
+    </div>
+    <button onclick="loadAnalytics()" class="btn btn-ghost btn-sm">↻ Refresh</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid anim anim-d1" id="kpiGrid">
+    <div class="kpi-card"><div class="kpi-val" id="kTotal">—</div><div class="kpi-label">Total Tickets</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="kOpen"  style="color:var(--accent)">—</div><div class="kpi-label">Open</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="kResolved" style="color:var(--success)">—</div><div class="kpi-label">Resolved</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="kAvg" style="color:var(--accent2)">—</div><div class="kpi-label">Avg Resolution (hrs)</div></div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-grid anim anim-d2">
+    <div class="chart-card">
+      <div class="chart-title">By Category</div>
+      <div class="loading-pulse" id="catLoading">Loading...</div>
+      <canvas id="catChart" style="display:none"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">By Priority</div>
+      <div class="loading-pulse" id="priLoading">Loading...</div>
+      <canvas id="priChart" style="display:none"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+let catChartInst = null;
+let priChartInst = null;
+
+const CHART_DEFAULTS = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: {
+    legend: {
+      labels: { color: '#6b6b80', font: { family: "'DM Mono', monospace", size: 11 } }
+    }
+  }
+};
+
+async function loadAnalytics() {
+  const res  = await fetch('/api/analytics');
+  const data = await res.json();
+
+  document.getElementById('kTotal').textContent    = data.total;
+  document.getElementById('kOpen').textContent     = data.open;
+  document.getElementById('kResolved').textContent = data.resolved;
+  document.getElementById('kAvg').textContent      = data.avg_resolution_hours != null ? data.avg_resolution_hours + 'h' : 'N/A';
+
+  // Category doughnut
+  const catLabels = Object.keys(data.by_category);
+  const catVals   = Object.values(data.by_category);
+  document.getElementById('catLoading').style.display = 'none';
+  document.getElementById('catChart').style.display   = 'block';
+
+  if (catChartInst) catChartInst.destroy();
+  catChartInst = new Chart(document.getElementById('catChart'), {
+    type: 'doughnut',
+    data: {
+      labels: catLabels,
+      datasets: [{
+        data: catVals,
+        backgroundColor: ['#e8ff47','#47ffe8','#ff4757','#ffa502','#2ed573'],
+        borderColor: '#111118',
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: { ...CHART_DEFAULTS, cutout: '65%' }
+  });
+
+  // Priority bar
+  const priOrder  = ['Critical','High','Medium','Low'];
+  const priColors = ['#ff4757','#ffa502','#47ffe8','#6b6b80'];
+  const priVals   = priOrder.map(p => data.by_priority[p] || 0);
+  document.getElementById('priLoading').style.display = 'none';
+  document.getElementById('priChart').style.display   = 'block';
+
+  if (priChartInst) priChartInst.destroy();
+  priChartInst = new Chart(document.getElementById('priChart'), {
+    type: 'bar',
+    data: {
+      labels: priOrder,
+      datasets: [{
+        label: 'Tickets',
+        data: priVals,
+        backgroundColor: priColors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      scales: {
+        x: { ticks: { color: '#6b6b80', font: { family: "'DM Mono', monospace", size: 11 } }, grid: { color: '#2a2a35' } },
+        y: { ticks: { color: '#6b6b80', font: { family: "'DM Mono', monospace", size: 11 } }, grid: { color: '#2a2a35' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+loadAnalytics();
+</script>
+{% endblock %}
