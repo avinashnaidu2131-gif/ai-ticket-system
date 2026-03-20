@@ -251,14 +251,25 @@ def update_status(id):
     ticket = Ticket.query.get_or_404(id)
     old_status    = ticket.status
     ticket.status = request.form["status"]
-    ticket.updated_at = datetime.utcnow()
+    try:
+        ticket.updated_at = datetime.utcnow()
+    except Exception:
+        pass
+    try:
+        if ticket.status == "Resolved":
+            ticket.resolved_at = datetime.utcnow()
+    except Exception:
+        pass
 
-    if ticket.status == "Resolved":
-        ticket.resolved_at = datetime.utcnow()
-
-    log_action(id, "status_changed", f"{old_status} → {ticket.status}")
+    try:
+        log_action(id, "status_changed", f"{old_status} → {ticket.status}")
+    except Exception:
+        pass
     db.session.commit()
-    notify_status_changed(ticket, ticket.status)
+    try:
+        notify_status_changed(ticket, ticket.status)
+    except Exception:
+        pass
     return redirect("/dashboard")
 
 
@@ -471,6 +482,77 @@ with app.app_context():
         print(f"Migration warning: {e}")
     print("DB ready!")
 
+
+
+# ── Email Notifications ───────────────────────────────────────────────────────
+def send_email(to, subject, body):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    mail_user = os.environ.get("MAIL_USER", "")
+    mail_pass = os.environ.get("MAIL_PASS", "")
+    if not mail_user or not mail_pass:
+        return
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = mail_user
+        msg["To"]      = to
+        msg.attach(MIMEText(body, "html"))
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(mail_user, mail_pass)
+            server.sendmail(mail_user, to, msg.as_string())
+    except Exception as e:
+        print(f"Email error: {e}")
+
+def notify_ticket_created(ticket, user):
+    admins = User.query.filter_by(company_id=user.company_id, role="admin").all()
+    for admin in admins:
+        if admin.email:
+            send_email(admin.email, f"[SupportAI] New Ticket #{ticket.id}: {ticket.title}",
+                f"<div style='font-family:sans-serif;padding:20px'><h2>New Ticket #{ticket.id}</h2><p><b>Title:</b> {ticket.title}</p><p><b>Category:</b> {ticket.category}</p><p><b>Priority:</b> {ticket.priority}</p><p><b>From:</b> {user.username}</p><p><b>Description:</b> {ticket.description}</p></div>")
+
+def notify_status_changed(ticket, new_status):
+    try:
+        submitter = User.query.get(ticket.user_id)
+        if submitter and submitter.email:
+            send_email(submitter.email, f"[SupportAI] Ticket #{ticket.id} is now {new_status}",
+                f"<div style='font-family:sans-serif;padding:20px'><h2>Ticket #{ticket.id} Updated</h2><p>Status changed to: <b>{new_status}</b></p>{'<p><b>Reply:</b> ' + ticket.reply + '</p>' if ticket.reply else ''}</div>")
+    except Exception as e:
+        print(f"Notify error: {e}")
+
+# ── AI Auto-Reply ─────────────────────────────────────────────────────────────
+@app.route("/api/ai_reply/<int:ticket_id>")
+@login_required
+def ai_reply_suggestion(ticket_id):
+    if current_user.role not in ("admin", "agent"):
+        return jsonify({"error": "forbidden"}), 403
+    ticket = Ticket.query.get_or_404(ticket_id)
+    templates = {
+        "Billing":         "Thank you for contacting us about your billing issue. We have reviewed your account and our team is looking into this. We will resolve it within 24-48 hours.",
+        "Authentication":  "Thank you for reaching out. We understand you are having trouble accessing your account. Please try resetting your password. If the issue persists, our team will assist you.",
+        "Technical":       "Thank you for reporting this issue. Our engineering team has been notified and is investigating. We expect to have this resolved shortly.",
+        "Feature Request": "Thank you for your valuable suggestion! We have logged this and our product team will review it.",
+        "General":         "Thank you for contacting SupportAI support. A team member will get back to you within 24 hours.",
+        "Manual Review":   "Thank you for your message. Our team will review it carefully and get back to you within 24 hours.",
+    }
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        reply = templates.get(ticket.category or "General", templates["General"])
+        return jsonify({"reply": reply, "source": "template"})
+    try:
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": api_key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": "claude-sonnet-4-20250514", "max_tokens": 200,
+                  "messages": [{"role": "user", "content": f"Write a professional support reply under 80 words for this ticket. Title: {ticket.title}. Category: {ticket.category}. Description: {ticket.description}"}]},
+            timeout=15,
+        )
+        reply = resp.json()["content"][0]["text"].strip()
+        return jsonify({"reply": reply, "source": "claude"})
+    except Exception:
+        reply = templates.get(ticket.category or "General", templates["General"])
+        return jsonify({"reply": reply, "source": "fallback"})
 
 # ── Pricing ───────────────────────────────────────────────────────────────────
 PLANS = {
