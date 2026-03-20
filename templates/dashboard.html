@@ -3,153 +3,114 @@
 
 {% block head %}
 <style>
-  /* ── Header ── */
+  /* ── Mobile responsive base ── */
+  * { box-sizing: border-box; }
+
   .dash-header {
     display: flex; align-items: flex-end; justify-content: space-between;
     margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;
   }
-  .dash-title {
-    font-family: var(--font-head);
-    font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em;
-  }
+  .dash-title { font-family: var(--font-head); font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em; }
   .dash-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.2rem; }
 
-  /* ── Stat row ── */
+  /* ── Stat grid ── */
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem; margin-bottom: 1.75rem;
   }
   .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.25rem;
-    transition: border-color .2s;
+    background: rgba(17,17,24,0.82); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem; transition: border-color .2s;
   }
   .stat-card:hover { border-color: var(--accent); }
-  .stat-val {
-    font-family: var(--font-head);
-    font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
-    line-height: 1;
-  }
+  .stat-val { font-family: var(--font-head); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
   .stat-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .3rem; }
 
-  /* ── Filters ── */
-  .filter-bar {
-    display: flex; gap: 0.5rem; flex-wrap: wrap;
-    margin-bottom: 1.25rem;
+  /* ── Search + filters ── */
+  .toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+  .search-box {
+    flex: 1; min-width: 180px;
+    display: flex; align-items: center; gap: 0.5rem;
+    background: rgba(17,17,24,0.82); border: 1px solid var(--border);
+    border-radius: 7px; padding: 0.4rem 0.75rem;
   }
-  .filter-bar select {
-    width: auto; padding: 0.4rem 0.75rem; font-size: 0.78rem; cursor: pointer;
+  .search-box input {
+    background: none; border: none; color: var(--text);
+    font-family: var(--font-mono); font-size: 0.82rem; outline: none; width: 100%;
+    padding: 0;
   }
-  .filter-bar .btn { font-size: 0.78rem; padding: 0.4rem 0.8rem; }
+  .search-icon { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
+  .toolbar select { width: auto; padding: 0.4rem 0.75rem; font-size: 0.78rem; cursor: pointer; }
+  .toolbar .btn { font-size: 0.78rem; padding: 0.4rem 0.8rem; }
 
   /* ── Table ── */
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
+  .table-wrap { background: rgba(17,17,24,0.82); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; }
-  thead tr { border-bottom: 1px solid var(--border); background: var(--surface2); }
-  th {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    font-size: 0.7rem; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500;
-  }
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background .15s;
-    cursor: pointer;
-  }
+  thead tr { border-bottom: 1px solid var(--border); background: rgba(24,24,31,0.9); }
+  th { padding: 0.75rem 1rem; text-align: left; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; cursor: pointer; }
   tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--surface2); }
+  tbody tr:hover { background: rgba(24,24,31,0.9); }
   td { padding: 0.85rem 1rem; font-size: 0.83rem; vertical-align: middle; }
-  .td-title { font-weight: 500; max-width: 260px; }
-  .td-title small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
-  .td-tags { color: var(--muted); font-size: 0.72rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .td-title { font-weight: 500; max-width: 220px; }
+  .td-title small { display: block; color: var(--muted); font-size: 0.72rem; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .td-conf { font-size: 0.78rem; color: var(--muted); }
-  .conf-bar {
-    height: 3px; border-radius: 2px;
-    background: var(--border); margin-top: 4px; width: 80px;
-  }
+  .conf-bar { height: 3px; border-radius: 2px; background: var(--border); margin-top: 4px; width: 60px; }
   .conf-fill { height: 100%; border-radius: 2px; background: var(--accent2); }
-
-  .empty-state {
-    text-align: center; padding: 4rem 2rem; color: var(--muted);
-  }
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: .4; }
 
   /* ── Modal ── */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
-    align-items: center; justify-content: center;
-  }
+  .modal-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem; }
   .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 2rem;
-    width: 100%; max-width: 560px;
-    max-height: 90vh; overflow-y: auto;
-    animation: fadeUp .25s ease;
-    position: relative;
-  }
-  .modal-close {
-    position: absolute; top: 1rem; right: 1rem;
-    background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;
-    width: 32px; height: 32px; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background .15s, color .15s;
-  }
+  .modal { background: rgba(17,17,24,0.97); border: 1px solid var(--border); border-radius: 14px; padding: 2rem; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; animation: fadeUp .25s ease; position: relative; }
+  .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background .15s, color .15s; }
   .modal-close:hover { background: var(--surface2); color: var(--text); }
-  .modal-title {
-    font-family: var(--font-head); font-size: 1.1rem; font-weight: 700;
-    margin-bottom: 1.25rem; padding-right: 2rem;
-  }
+  .modal-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; padding-right: 2rem; }
   .detail-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: flex-start; }
   .detail-key { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; min-width: 90px; padding-top: 2px; }
-  .detail-val { font-size: 0.83rem; }
-  .ai-box {
-    background: rgba(232,255,71,.04);
-    border: 1px solid rgba(232,255,71,.12);
-    border-radius: 8px; padding: 0.85rem 1rem;
-    font-size: 0.8rem; color: var(--muted);
-    margin: 1rem 0;
-  }
+  .ai-box { background: rgba(232,255,71,.04); border: 1px solid rgba(232,255,71,.12); border-radius: 8px; padding: 0.85rem 1rem; font-size: 0.8rem; color: var(--muted); margin: 1rem 0; }
   .ai-box strong { color: var(--accent); }
   .section-sep { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
   .audit-list { display: flex; flex-direction: column; gap: 0.5rem; }
-  .audit-item {
-    display: flex; gap: 0.75rem; align-items: flex-start;
-    font-size: 0.78rem; color: var(--muted);
-  }
+  .audit-item { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.78rem; color: var(--muted); }
   .audit-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); margin-top: 5px; flex-shrink: 0; }
 
+  /* ── AI Reply box ── */
+  .ai-reply-box { background: rgba(71,255,232,.04); border: 1px solid rgba(71,255,232,.15); border-radius: 8px; padding: 0.85rem 1rem; margin: 0.75rem 0; display: none; }
+  .ai-reply-box.visible { display: block; animation: fadeUp .2s ease; }
+  .ai-reply-text { font-size: 0.82rem; color: var(--text); line-height: 1.5; margin-bottom: 0.5rem; }
+  .ai-reply-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+  .ai-reply-label { font-size: 0.7rem; color: var(--accent2); text-transform: uppercase; letter-spacing: .08em; }
+
   /* ── Invite panel ── */
-  .invite-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.25rem 1.5rem;
-    margin-top: 1.5rem;
-    display: none;
-  }
+  .invite-panel { background: rgba(17,17,24,0.82); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-top: 1.5rem; display: none; }
   .invite-panel.open { display: block; animation: fadeUp .25s ease; }
-  .invite-title {
-    font-family: var(--font-head); font-weight: 700; margin-bottom: 1rem;
-  }
   .invite-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; }
 
-  @media (max-width: 700px) {
+  /* ── Mobile styles ── */
+  @media (max-width: 768px) {
+    .page { padding: 1rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-grid .stat-card:last-child { grid-column: span 2; }
+    .dash-header { flex-direction: column; align-items: flex-start; }
+    .dash-header .flex { width: 100%; justify-content: space-between; }
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    th:nth-child(6), td:nth-child(6),
+    th:nth-child(7), td:nth-child(7) { display: none; }
+    .toolbar { gap: 0.4rem; }
+    .toolbar select { font-size: 0.72rem; padding: 0.35rem 0.5rem; }
     .invite-grid { grid-template-columns: 1fr; }
-    td:nth-child(4), th:nth-child(4),
-    td:nth-child(5), th:nth-child(5) { display: none; }
+    .modal { padding: 1.25rem; margin: 0; border-radius: 12px; }
+  }
+
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .stat-val { font-size: 1.5rem; }
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) { display: none; }
+    .dash-title { font-size: 1.3rem; }
   }
 </style>
 {% endblock %}
@@ -161,7 +122,9 @@
   <div class="dash-header anim">
     <div>
       <div class="dash-title">Ticket Dashboard</div>
-      <div class="dash-sub">{{ tickets|length }} ticket{{ 's' if tickets|length != 1 }} · {{ current_user.company.name }}</div>
+      <div class="dash-sub">{{ tickets|length }} ticket{{ 's' if tickets|length != 1 }} · {{ current_user.company.name }}
+        <span style="color:var(--accent);margin-left:.5rem">[ {{ current_user.company.plan | upper }} ]</span>
+      </div>
     </div>
     <div class="flex gap-1">
       {% if current_user.role == 'admin' %}
@@ -171,36 +134,27 @@
     </div>
   </div>
 
-  <!-- Stat cards -->
+  <!-- Stats -->
   <div class="stat-grid anim anim-d1">
     {% set open_count     = tickets | selectattr('status','equalto','Open')        | list | length %}
     {% set progress_count = tickets | selectattr('status','equalto','In Progress') | list | length %}
     {% set resolved_count = tickets | selectattr('status','equalto','Resolved')    | list | length %}
     {% set high_count     = tickets | selectattr('priority','in',['High','Critical']) | list | length %}
-    <div class="stat-card">
-      <div class="stat-val">{{ tickets|length }}</div>
-      <div class="stat-label">Total Tickets</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val" style="color:var(--accent)">{{ open_count }}</div>
-      <div class="stat-label">Open</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val" style="color:var(--accent2)">{{ progress_count }}</div>
-      <div class="stat-label">In Progress</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val" style="color:var(--success)">{{ resolved_count }}</div>
-      <div class="stat-label">Resolved</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-val" style="color:var(--warn)">{{ high_count }}</div>
-      <div class="stat-label">High/Critical</div>
-    </div>
+    <div class="stat-card"><div class="stat-val">{{ tickets|length }}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent)">{{ open_count }}</div><div class="stat-label">Open</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">{{ progress_count }}</div><div class="stat-label">In Progress</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--success)">{{ resolved_count }}</div><div class="stat-label">Resolved</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--warn)">{{ high_count }}</div><div class="stat-label">High/Critical</div></div>
   </div>
 
-  <!-- Filters -->
-  <form method="GET" class="filter-bar anim anim-d2">
+  <!-- Toolbar: Search + Filters -->
+  <form method="GET" class="toolbar anim anim-d2" id="filterForm">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" name="q" placeholder="Search tickets..."
+             value="{{ request.args.get('q','') }}"
+             oninput="debounceSearch()" />
+    </div>
     <select name="status" onchange="this.form.submit()">
       <option value="">All Statuses</option>
       <option value="Open"        {% if request.args.get('status')=='Open'        %}selected{% endif %}>Open</option>
@@ -218,13 +172,12 @@
     <select name="category" onchange="this.form.submit()">
       <option value="">All Categories</option>
       <option value="Billing"        {% if request.args.get('category')=='Billing'        %}selected{% endif %}>Billing</option>
-      <option value="Authentication" {% if request.args.get('category')=='Authentication' %}selected{% endif %}>Authentication</option>
+      <option value="Authentication" {% if request.args.get('category')=='Authentication' %}selected{% endif %}>Auth</option>
       <option value="Technical"      {% if request.args.get('category')=='Technical'      %}selected{% endif %}>Technical</option>
-      <option value="Feature Request"{% if request.args.get('category')=='Feature Request'%}selected{% endif %}>Feature Request</option>
-      <option value="General"        {% if request.args.get('category')=='General'        %}selected{% endif %}>General</option>
+      <option value="Feature Request"{% if request.args.get('category')=='Feature Request'%}selected{% endif %}>Feature</option>
     </select>
     {% if request.args %}
-    <a href="/dashboard" class="btn btn-ghost">✕ Clear</a>
+    <a href="/dashboard" class="btn btn-ghost">✕</a>
     {% endif %}
   </form>
 
@@ -234,50 +187,29 @@
     <table>
       <thead>
         <tr>
-          <th>#</th>
-          <th>Ticket</th>
-          <th>Category</th>
-          <th>Priority</th>
-          <th>Status</th>
-          <th>AI Confidence</th>
-          <th>Assigned</th>
-          <th>Actions</th>
+          <th>#</th><th>Ticket</th><th>Category</th><th>Priority</th>
+          <th>Status</th><th>Confidence</th><th>Assigned</th><th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for t in tickets %}
         <tr onclick="openModal({{ t.id }})">
           <td class="text-muted text-sm">#{{ t.id }}</td>
-          <td class="td-title">
-            {{ t.title }}
-            <small>{{ t.tags }}</small>
-          </td>
+          <td class="td-title">{{ t.title }}<small>{{ t.tags }}</small></td>
           <td><span class="text-sm">{{ t.category or '—' }}</span></td>
-          <td>
-            <span class="badge p-{{ (t.priority or 'medium').lower() }}">
-              {{ t.priority or 'Medium' }}
-            </span>
-          </td>
-          <td>
-            <span class="badge s-{{ (t.status or 'open').lower().replace(' ','-') }}">
-              {{ t.status }}
-            </span>
-          </td>
+          <td><span class="badge p-{{ (t.priority or 'medium').lower() }}">{{ t.priority or 'Medium' }}</span></td>
+          <td><span class="badge s-{{ (t.status or 'open').lower().replace(' ','-') }}">{{ t.status }}</span></td>
           <td class="td-conf">
             {{ "%.0f"|format((t.confidence or 0)*100) }}%
             <div class="conf-bar"><div class="conf-fill" style="width:{{ "%.0f"|format((t.confidence or 0)*100) }}%"></div></div>
           </td>
           <td class="text-sm text-muted">
-            {% if t.assigned_to %}
-              {{ agents | selectattr('id','equalto',t.assigned_to) | map(attribute='username') | first | default('—') }}
-            {% else %}—{% endif %}
+            {% if t.assigned_to %}{{ agents | selectattr('id','equalto',t.assigned_to) | map(attribute='username') | first | default('—') }}{% else %}—{% endif %}
           </td>
           <td onclick="event.stopPropagation()">
-            <div class="flex gap-1">
-              {% if current_user.role in ['admin','agent'] %}
-              <button class="btn btn-ghost btn-sm" onclick="openActions({{ t.id }}, '{{ t.status }}', '{{ t.reply or '' }}')">Manage</button>
-              {% endif %}
-            </div>
+            {% if current_user.role in ['admin','agent'] %}
+            <button class="btn btn-ghost btn-sm" onclick="openActions({{ t.id }}, '{{ t.status }}', {{ t.reply|tojson if t.reply else '\"\"' }})">Manage</button>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}
@@ -292,43 +224,36 @@
     {% endif %}
   </div>
 
-  <!-- Invite Agent Panel -->
+  <!-- Invite Agent -->
   {% if current_user.role == 'admin' %}
   <div class="invite-panel" id="invitePanel">
-    <div class="invite-title">Invite Agent</div>
+    <div style="font-family:var(--font-head);font-weight:700;margin-bottom:1rem;">Invite Agent</div>
     <form method="POST" action="/invite_agent">
       <div class="invite-grid">
-        <div class="form-group" style="margin:0">
-          <label>Username</label>
-          <input type="text" name="username" placeholder="agent_name" required />
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Password</label>
-          <input type="password" name="password" placeholder="••••••••" required />
-        </div>
-        <button type="submit" class="btn btn-primary" style="align-self:flex-end">Create Agent</button>
+        <div class="form-group" style="margin:0"><label>Username</label><input type="text" name="username" placeholder="agent_name" required /></div>
+        <div class="form-group" style="margin:0"><label>Password</label><input type="password" name="password" placeholder="••••••••" required /></div>
+        <button type="submit" class="btn btn-primary" style="align-self:flex-end">Create</button>
       </div>
     </form>
   </div>
   {% endif %}
 </div>
 
-<!-- ── Ticket Detail Modal ── -->
+<!-- Detail Modal -->
 <div class="modal-overlay" id="detailModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
     <div class="modal-title" id="modalTitle">Loading...</div>
-    <div id="modalBody"><p class="text-muted text-sm">Fetching details...</p></div>
+    <div id="modalBody"><p class="text-muted text-sm">Fetching...</p></div>
   </div>
 </div>
 
-<!-- ── Manage Actions Modal ── -->
+<!-- Manage Modal -->
 <div class="modal-overlay" id="actionModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('actionModal')">✕</button>
     <div class="modal-title">Manage Ticket</div>
 
-    <!-- Status -->
     <form method="POST" id="statusForm">
       <div class="form-group">
         <label>Update Status</label>
@@ -344,19 +269,33 @@
 
     <hr class="section-sep" />
 
-    <!-- Reply -->
     <form method="POST" id="replyForm">
       <div class="form-group">
         <label>Send Reply</label>
-        <textarea name="reply" id="replyTextarea" rows="3" placeholder="Write a reply to the customer..."></textarea>
+
+        <!-- AI Reply suggestion -->
+        {% if current_user.role in ['admin','agent'] %}
+        <div style="margin-bottom:.5rem">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="getAIReply()" id="aiReplyBtn">
+            🤖 AI Suggest Reply
+          </button>
+        </div>
+        <div class="ai-reply-box" id="aiReplyBox">
+          <div class="ai-reply-header">
+            <span class="ai-reply-label">🤖 AI Suggestion</span>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="useAIReply()">Use This</button>
+          </div>
+          <div class="ai-reply-text" id="aiReplyText"></div>
+        </div>
+        {% endif %}
+
+        <textarea name="reply" id="replyTextarea" rows="4" placeholder="Write a reply..."></textarea>
       </div>
       <button type="submit" class="btn btn-primary btn-sm">Send Reply</button>
     </form>
 
     {% if current_user.role == 'admin' %}
     <hr class="section-sep" />
-
-    <!-- Assign -->
     <form method="POST" id="assignForm">
       <div class="form-group">
         <label>Assign to Agent</label>
@@ -374,7 +313,18 @@
 </div>
 
 <script>
+let currentTicketId = null;
+
+// ── Search debounce ──────────────────────────────────────────────────────────
+let searchTimer;
+function debounceSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => document.getElementById('filterForm').submit(), 500);
+}
+
+// ── Ticket detail modal ──────────────────────────────────────────────────────
 async function openModal(id) {
+  currentTicketId = id;
   document.getElementById('modalTitle').textContent = 'Ticket #' + id;
   document.getElementById('modalBody').innerHTML = '<p class="text-muted text-sm">Loading...</p>';
   document.getElementById('detailModal').classList.add('open');
@@ -382,57 +332,74 @@ async function openModal(id) {
   const res  = await fetch('/api/ticket/' + id);
   const data = await res.json();
 
-  const priorityClass = { Critical:'p-critical', High:'p-high', Medium:'p-medium', Low:'p-low' };
-  const statusClass   = { Open:'s-open', 'In Progress':'s-in-progress', Resolved:'s-resolved', Closed:'s-closed' };
-  const pClass = priorityClass[data.priority] || 'p-low';
-  const sClass = statusClass[data.status]   || 's-open';
+  const pC = {Critical:'p-critical',High:'p-high',Medium:'p-medium',Low:'p-low'};
+  const sC = {Open:'s-open','In Progress':'s-in-progress',Resolved:'s-resolved',Closed:'s-closed'};
 
-  const logs = (data.audit_logs || []).map(l =>
-    `<div class="audit-item"><div class="audit-dot"></div><span><strong>${l.by}</strong> · ${l.action}${l.detail ? ' — ' + l.detail : ''} <span style="opacity:.5">${new Date(l.at).toLocaleString()}</span></span></div>`
+  const logs = (data.audit_logs||[]).map(l =>
+    `<div class="audit-item"><div class="audit-dot"></div><span><strong>${l.by}</strong> · ${l.action}${l.detail?' — '+l.detail:''} <span style="opacity:.5">${new Date(l.at).toLocaleString()}</span></span></div>`
   ).join('') || '<p class="text-muted text-sm">No activity yet.</p>';
 
   document.getElementById('modalTitle').textContent = data.title;
   document.getElementById('modalBody').innerHTML = `
-    <div class="detail-row"><span class="detail-key">Category</span><span class="detail-val">${data.category || '—'}</span></div>
-    <div class="detail-row"><span class="detail-key">Priority</span><span class="badge ${pClass}">${data.priority}</span></div>
-    <div class="detail-row"><span class="detail-key">Status</span><span class="badge ${sClass}">${data.status}</span></div>
-    <div class="detail-row"><span class="detail-key">Submitted</span><span class="detail-val text-muted">${new Date(data.created_at).toLocaleString()}</span></div>
-    <hr class="section-sep" />
+    <div class="detail-row"><span class="detail-key">Category</span><span>${data.category||'—'}</span></div>
+    <div class="detail-row"><span class="detail-key">Priority</span><span class="badge ${pC[data.priority]||'p-low'}">${data.priority}</span></div>
+    <div class="detail-row"><span class="detail-key">Status</span><span class="badge ${sC[data.status]||'s-open'}">${data.status}</span></div>
+    <div class="detail-row"><span class="detail-key">Submitted</span><span class="text-muted text-sm">${new Date(data.created_at).toLocaleString()}</span></div>
+    <hr class="section-sep"/>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem">Description</p>
     <p style="font-size:.85rem">${data.description}</p>
-    <div class="ai-box">
-      <strong>AI:</strong> ${data.explanation || '—'} &nbsp;·&nbsp; Tags: ${data.tags || '—'}
-    </div>
-    ${data.reply ? `<p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Agent Reply</p><p style="font-size:.85rem">${data.reply}</p><hr class="section-sep" />` : ''}
+    <div class="ai-box"><strong>AI:</strong> ${data.explanation||'—'} · Tags: ${data.tags||'—'}</div>
+    ${data.reply?`<p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem">Agent Reply</p><p style="font-size:.85rem">${data.reply}</p><hr class="section-sep"/>` : ''}
     <p style="font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem">Audit Log</p>
     <div class="audit-list">${logs}</div>
   `;
 }
 
+// ── Manage modal ──────────────────────────────────────────────────────────────
 function openActions(id, status, reply) {
+  currentTicketId = id;
   document.getElementById('statusForm').action  = '/update_status/' + id;
   document.getElementById('replyForm').action   = '/reply/' + id;
-  const assignForm = document.getElementById('assignForm');
-  if (assignForm) assignForm.action = '/assign/' + id;
-
-  document.getElementById('statusSelect').value    = status;
-  document.getElementById('replyTextarea').value   = reply;
+  const af = document.getElementById('assignForm');
+  if (af) af.action = '/assign/' + id;
+  document.getElementById('statusSelect').value  = status;
+  document.getElementById('replyTextarea').value = reply || '';
+  // Hide AI reply box
+  document.getElementById('aiReplyBox') && (document.getElementById('aiReplyBox').className = 'ai-reply-box');
   document.getElementById('actionModal').classList.add('open');
 }
 
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
+// ── AI Reply suggestion ───────────────────────────────────────────────────────
+async function getAIReply() {
+  if (!currentTicketId) return;
+  const btn = document.getElementById('aiReplyBtn');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch('/api/ai_reply/' + currentTicketId);
+    const data = await res.json();
+    document.getElementById('aiReplyText').textContent = data.reply;
+    document.getElementById('aiReplyBox').classList.add('visible');
+  } catch(e) {
+    alert('Could not generate reply. Try again.');
+  }
+
+  btn.textContent = '🤖 AI Suggest Reply';
+  btn.disabled = false;
 }
 
-function toggleInvite() {
-  document.getElementById('invitePanel').classList.toggle('open');
+function useAIReply() {
+  const text = document.getElementById('aiReplyText').textContent;
+  document.getElementById('replyTextarea').value = text;
+  document.getElementById('aiReplyBox').classList.remove('visible');
 }
 
-// Close on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
-    if (e.target === overlay) overlay.classList.remove('open');
-  });
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function toggleInvite() { document.getElementById('invitePanel').classList.toggle('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target===o) o.classList.remove('open'); });
 });
 </script>
 {% endblock %}
