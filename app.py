@@ -420,7 +420,11 @@ def chat_tickets():
 # ── Auto-create DB tables on startup (needed for Render/production) ──────────
 with app.app_context():
     os.makedirs("static/uploads", exist_ok=True)
+    if os.environ.get("RESET_DB") == "true":
+        db.drop_all()
+        print("DB dropped!")
     db.create_all()
+    print("DB tables created!")
 
 
 # ── Pricing & Stripe ──────────────────────────────────────────────────────────
