@@ -58,6 +58,8 @@ def home():
 
 @app.route("/register", methods=["GET"])
 def register():
+    if current_user.is_authenticated:
+        return redirect("/dashboard")
     return render_template("register.html")
 
 
@@ -120,6 +122,10 @@ def register_citizen():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Already logged in → go to dashboard
+    if current_user.is_authenticated:
+        return redirect("/dashboard")
+
     if request.method == "POST":
         username = request.form["username"].strip()
         password = request.form["password"]
@@ -168,8 +174,9 @@ def dashboard():
     if category_filter:
         q = q.filter_by(category=category_filter)
     if search_query:
+        from sqlalchemy import or_
         q = q.filter(
-            db.or_(
+            or_(
                 Ticket.title.ilike(f"%{search_query}%"),
                 Ticket.description.ilike(f"%{search_query}%"),
                 Ticket.tags.ilike(f"%{search_query}%"),
@@ -425,14 +432,29 @@ def chat_tickets():
     tickets = Ticket.query.filter_by(company_id=current_user.company_id)                          .order_by(Ticket.created_at.desc()).limit(50).all()
     return jsonify([{"id": t.id, "title": t.title} for t in tickets])
 
-# ── Auto-create DB tables on startup (needed for Render/production) ──────────
+# ── Auto-create DB tables on startup ─────────────────────────────────────────
 with app.app_context():
     os.makedirs("static/uploads", exist_ok=True)
-    if os.environ.get("RESET_DB") == "true":
-        db.drop_all()
-        print("DB dropped!")
     db.create_all()
-    print("DB tables created!")
+
+    # Safe migration - add missing columns without losing data
+    from sqlalchemy import text, inspect
+    insp = inspect(db.engine)
+    with db.engine.connect() as conn:
+        # Add company.plan if missing
+        try:
+            cols = [c["name"] for c in insp.get_columns("company")]
+            if "plan" not in cols:
+                conn.execute(text("ALTER TABLE company ADD COLUMN plan VARCHAR(20) DEFAULT 'free'"))
+                conn.commit()
+                print("Migrated: company.plan added")
+            if "stripe_id" not in cols:
+                conn.execute(text("ALTER TABLE company ADD COLUMN stripe_id VARCHAR(100)"))
+                conn.commit()
+                print("Migrated: company.stripe_id added")
+        except Exception as e:
+            print(f"Migration note: {e}")
+    print("DB ready!")
 
 
 # ── Pricing & Plans ───────────────────────────────────────────────────────────
