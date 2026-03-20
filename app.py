@@ -471,6 +471,39 @@ with app.app_context():
         print(f"Migration warning: {e}")
     print("DB ready!")
 
+
+# ── Pricing ───────────────────────────────────────────────────────────────────
+PLANS = {
+    "starter":    {"name": "Starter",    "price": 749,  "agents": 5,   "tickets": 100},
+    "pro":        {"name": "Pro",        "price": 2499, "agents": 20,  "tickets": 1000},
+    "enterprise": {"name": "Enterprise", "price": 8999, "agents": 999, "tickets": 99999},
+}
+
+@app.route("/pricing")
+def pricing():
+    current_plan = "free"
+    if current_user.is_authenticated:
+        current_plan = current_user.company.plan or "free"
+    return render_template("pricing.html", plans=PLANS, current_plan=current_plan)
+
+@app.route("/subscribe/<plan>", methods=["POST"])
+@login_required
+def subscribe(plan):
+    if plan not in PLANS:
+        return "Invalid plan", 400
+    return render_template("payment.html", plan=plan, details=PLANS[plan])
+
+@app.route("/confirm_plan/<plan>", methods=["POST"])
+@login_required
+def confirm_plan(plan):
+    if plan not in PLANS:
+        return "Invalid plan", 400
+    company = Company.query.get(current_user.company_id)
+    company.plan = plan
+    db.session.commit()
+    flash(f"🎉 Plan upgraded to {plan.title()}! Welcome aboard.", "success")
+    return redirect("/dashboard")
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
