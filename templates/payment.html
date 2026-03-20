@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Payment · SupportAI{% endblock %}
+
+{% block head %}
+<style>
+  .pay-wrap {
+    max-width: 560px; margin: 3rem auto;
+    position: relative; z-index: 10;
+  }
+  .pay-eyebrow { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent2); margin-bottom: 0.5rem; }
+  .pay-title { font-family: var(--font-head); font-size: 1.8rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.4rem; }
+  .pay-sub { color: var(--muted); font-size: 0.84rem; margin-bottom: 2rem; }
+
+  .plan-summary {
+    background: rgba(232,255,71,0.05);
+    border: 1px solid rgba(232,255,71,0.2);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .plan-summary-name { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; }
+  .plan-summary-price { font-family: var(--font-head); font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+  .plan-summary-period { font-size: 0.75rem; color: var(--muted); }
+
+  .payment-methods { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
+  .method-card {
+    background: rgba(17,17,24,0.85);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .method-card:hover { border-color: var(--accent); }
+  .method-card.selected { border-color: var(--accent); background: rgba(232,255,71,0.04); }
+  .method-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0; }
+  .method-icon { font-size: 1.4rem; }
+  .method-name { font-weight: 600; font-size: 0.9rem; }
+  .method-sub { font-size: 0.75rem; color: var(--muted); }
+  .method-details { margin-top: 1rem; display: none; }
+  .method-card.selected .method-details { display: block; animation: fadeUp .2s ease; }
+
+  .upi-id {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    font-size: 1rem; font-weight: 600;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .copy-btn {
+    background: var(--accent); color: #0a0a0f;
+    border: none; border-radius: 5px;
+    padding: 4px 10px; font-size: 0.72rem; font-weight: 600;
+    cursor: pointer; font-family: var(--font-mono);
+  }
+  .bank-detail { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+  .bank-detail:last-child { border: none; }
+  .bank-key { color: var(--muted); }
+
+  .steps { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+  .step { display: flex; gap: 0.6rem; font-size: 0.8rem; color: var(--muted); align-items: flex-start; }
+  .step-num { background: var(--accent); color: #0a0a0f; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  .confirm-box {
+    background: rgba(17,17,24,0.85);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+  .confirm-note { font-size: 0.78rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.6; }
+  .confirm-note strong { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page pay-wrap anim">
+  <p class="pay-eyebrow">// Upgrade Plan</p>
+  <h1 class="pay-title">Complete Your Payment</h1>
+  <p class="pay-sub">Choose your preferred payment method below.</p>
+
+  <!-- Plan Summary -->
+  <div class="plan-summary">
+    <div>
+      <div class="plan-summary-name">{{ details.name }} Plan</div>
+      <div class="text-sm text-muted">{{ details.agents }} agents · {{ details.tickets }} tickets/month</div>
+    </div>
+    <div style="text-align:right">
+      <div class="plan-summary-price">₹{{ details.price }}</div>
+      <div class="plan-summary-period">per month</div>
+    </div>
+  </div>
+
+  <!-- Payment Methods -->
+  <div class="payment-methods">
+
+    <!-- UPI -->
+    <div class="method-card selected" onclick="selectMethod(this)">
+      <div class="method-header">
+        <span class="method-icon">📱</span>
+        <div>
+          <div class="method-name">UPI Payment</div>
+          <div class="method-sub">GPay, PhonePe, Paytm, BHIM</div>
+        </div>
+      </div>
+      <div class="method-details">
+        <div class="upi-id">
+          <span id="upi-text">supportai@upi</span>
+          <button class="copy-btn" onclick="copyUPI()">Copy</button>
+        </div>
+        <div class="steps">
+          <div class="step"><div class="step-num">1</div> Open GPay / PhonePe / Paytm</div>
+          <div class="step"><div class="step-num">2</div> Send ₹{{ details.price }} to <strong>supportai@upi</strong></div>
+          <div class="step"><div class="step-num">3</div> Add note: "{{ plan }}_{{ current_user.username }}"</div>
+          <div class="step"><div class="step-num">4</div> Take screenshot and confirm below</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bank Transfer -->
+    <div class="method-card" onclick="selectMethod(this)">
+      <div class="method-header">
+        <span class="method-icon">🏦</span>
+        <div>
+          <div class="method-name">Bank Transfer / NEFT</div>
+          <div class="method-sub">Direct bank transfer</div>
+        </div>
+      </div>
+      <div class="method-details">
+        <div class="bank-detail"><span class="bank-key">Account Name</span><span>SupportAI Technologies</span></div>
+        <div class="bank-detail"><span class="bank-key">Account Number</span><span>1234567890123</span></div>
+        <div class="bank-detail"><span class="bank-key">IFSC Code</span><span>SBIN0001234</span></div>
+        <div class="bank-detail"><span class="bank-key">Bank</span><span>State Bank of India</span></div>
+        <div class="bank-detail"><span class="bank-key">Amount</span><span style="color:var(--accent)">₹{{ details.price }}</span></div>
+        <div class="steps mt-2">
+          <div class="step"><div class="step-num">1</div> Transfer ₹{{ details.price }} to above account</div>
+          <div class="step"><div class="step-num">2</div> Use reference: "{{ plan }}_{{ current_user.username }}"</div>
+          <div class="step"><div class="step-num">3</div> Confirm below after transfer</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Confirm Payment -->
+  <div class="confirm-box">
+    <p class="confirm-note">
+      After completing payment, click <strong>Confirm Payment</strong> below.
+      Your plan will be activated within <strong>2-4 hours</strong> after we verify your payment.
+    </p>
+    <form method="POST" action="/confirm_plan/{{ plan }}">
+      <div class="form-group">
+        <label>Transaction ID / UTR Number</label>
+        <input type="text" name="txn_id" placeholder="e.g. 123456789012" required />
+      </div>
+      <div class="form-group">
+        <label>Your Phone / Email</label>
+        <input type="text" name="contact" placeholder="For payment verification" required />
+      </div>
+      <div class="flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary">✓ Confirm Payment</button>
+        <a href="/pricing" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function selectMethod(card) {
+  document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+function copyUPI() {
+  navigator.clipboard.writeText('supportai@upi');
+  const btn = document.querySelector('.copy-btn');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+</script>
+{% endblock %}

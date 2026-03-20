@@ -1,5 +1,4 @@
 import os
-import stripe
 from datetime import datetime, timedelta
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
@@ -21,8 +20,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"]            = "static/uploads"
 app.config["MAX_CONTENT_LENGTH"]       = 5 * 1024 * 1024  # 5 MB upload limit
-
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
@@ -427,73 +424,36 @@ with app.app_context():
     print("DB tables created!")
 
 
-# ── Pricing & Stripe ──────────────────────────────────────────────────────────
+# ── Pricing & Plans ───────────────────────────────────────────────────────────
 PLANS = {
-    "starter":    {"name": "Starter",    "price": 9,  "agents": 5,   "tickets": 100},
-    "pro":        {"name": "Pro",        "price": 29, "agents": 20,  "tickets": 1000},
-    "enterprise": {"name": "Enterprise", "price": 99, "agents": 999, "tickets": 99999},
+    "starter":    {"name": "Starter",    "price": 749,  "agents": 5,   "tickets": 100},
+    "pro":        {"name": "Pro",        "price": 2499, "agents": 20,  "tickets": 1000},
+    "enterprise": {"name": "Enterprise", "price": 8999, "agents": 999, "tickets": 99999},
 }
 
 @app.route("/pricing")
 def pricing():
-    return render_template("pricing.html", plans=PLANS,
-                           current_plan=current_user.company.plan if current_user.is_authenticated else "free")
+    current_plan = current_user.company.plan if current_user.is_authenticated else "free"
+    return render_template("pricing.html", plans=PLANS, current_plan=current_plan)
 
 @app.route("/subscribe/<plan>", methods=["POST"])
 @login_required
 def subscribe(plan):
     if plan not in PLANS:
         return "Invalid plan", 400
-    p = PLANS[plan]
-    domain = os.environ.get("APP_URL", request.host_url.rstrip("/"))
-    session = stripe.checkout.Session.create(
-        payment_method_types=["card"],
-        line_items=[{
-            "price_data": {
-                "currency": "usd",
-                "product_data": {"name": f"SupportAI {p['name']} Plan"},
-                "unit_amount": p["price"] * 100,
-                "recurring": {"interval": "month"},
-            },
-            "quantity": 1,
-        }],
-        mode="subscription",
-        success_url=domain + "/payment/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url=domain + "/pricing",
-        metadata={"company_id": str(current_user.company_id), "plan": plan},
-    )
-    return redirect(session.url, code=303)
+    # Store plan selection — payment handled via UPI/bank transfer
+    return render_template("payment.html", plan=plan, details=PLANS[plan])
 
-@app.route("/payment/success")
+@app.route("/confirm_plan/<plan>", methods=["POST"])
 @login_required
-def payment_success():
-    session_id = request.args.get("session_id")
-    try:
-        sess  = stripe.checkout.Session.retrieve(session_id)
-        plan  = sess.metadata.get("plan", "starter")
-        company = Company.query.get(current_user.company_id)
-        company.plan = plan
-        db.session.commit()
-        flash(f"🎉 Successfully subscribed to {plan.title()} plan!", "success")
-    except Exception:
-        flash("Payment recorded but plan update failed. Contact support.", "danger")
+def confirm_plan(plan):
+    if plan not in PLANS:
+        return "Invalid plan", 400
+    company = Company.query.get(current_user.company_id)
+    company.plan = plan
+    db.session.commit()
+    flash(f"🎉 Plan upgraded to {plan.title()}! Welcome aboard.", "success")
     return redirect("/dashboard")
-
-@app.route("/webhook/stripe", methods=["POST"])
-def stripe_webhook():
-    payload    = request.data
-    sig_header = request.headers.get("Stripe-Signature", "")
-    secret     = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-    try:
-        event = stripe.Webhook.construct_event(payload, sig_header, secret)
-        if event["type"] == "customer.subscription.deleted":
-            cid = event["data"]["object"].get("metadata", {}).get("company_id")
-            if cid:
-                c = Company.query.get(int(cid))
-                if c: c.plan = "free"; db.session.commit()
-    except Exception:
-        return "Error", 400
-    return "OK", 200
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
