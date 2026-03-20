@@ -311,7 +311,7 @@
 
 <canvas id="bg-canvas"></canvas>
 
-{% if current_user.is_authenticated %}
+{% if current_user.is_authenticated and request.path not in ['/login', '/register'] %}
 <nav class="navbar">
   <a href="/dashboard" class="navbar-brand">◈ Support<span>AI</span></a>
   <div class="navbar-links">
